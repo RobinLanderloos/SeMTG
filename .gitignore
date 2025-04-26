@@ -6,8 +6,11 @@ riderModule.iml
 
 **/.idea/
 
-**/Lib/site-packages/
 
 *.DotSettings.user
 
 data/
+
+# mtg-embedder
+**/Lib/site-packages/
+**/pyvenv.cfg
