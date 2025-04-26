@@ -2,7 +2,6 @@
 
 namespace SeMTG.API.Embedding;
 
-// TODO: Move to non-static class
 public class PythonHttpEmbeddingService : IEmbeddingService
 {
 	private readonly ILogger<PythonHttpEmbeddingService> _logger;

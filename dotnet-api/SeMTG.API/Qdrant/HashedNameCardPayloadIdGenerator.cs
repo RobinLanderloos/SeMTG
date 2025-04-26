@@ -14,8 +14,8 @@ public class HashedNameCardPayloadIdGenerator : ICardPayloadIdGenerator
 	public ulong GenerateId(ScryfallCardObject card)
 	{
 		_logger.LogDebug("Generating ID for card {CardName}", card.Name);
-		// TODO: Maybe add some caching here to avoid hashing the same card multiple times
-		
+		// Maybe add some caching here to avoid hashing the same card multiple times
+
 		return HashStringToUlong(card.Name);
 	}
 
