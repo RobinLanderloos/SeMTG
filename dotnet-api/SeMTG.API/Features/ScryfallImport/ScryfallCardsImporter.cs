@@ -55,7 +55,7 @@ public class ScryfallCardsImporter(IEmbeddingService embeddingService, QdrantSer
 				await dbContext.SaveChangesAsync();
 
 				// Use the oracle text as the vector
-				var texts = chunks[i].Select(card => card.OracleText).ToList();
+				var texts = chunks[i].Select(card => $"{card.Name} {card.TypeLine} {card.OracleText}").ToList();
 				var vectors = await embeddingService.EmbedBatchAsync(texts);
 
 				for (var y = 0; y < vectors.Count; y++)

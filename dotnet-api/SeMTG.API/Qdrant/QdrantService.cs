@@ -9,25 +9,25 @@ public class QdrantService
 	private const string CollectionName = "mtg-cards";
 	private const string Host = "localhost";
 	private const int Port = 6334;
-	private const ulong VectorSize = 384;
+	private const ulong VectorSize = 768;
 	private const Distance VectorDistance = Distance.Cosine;
 
 	private readonly ILogger<QdrantService> _logger;
-	private readonly ICardPayloadIdGenerator _cardPayloadIdGenerator;
 	private readonly QdrantClient _client;
 
-	public QdrantService(ILogger<QdrantService> logger,
-		ICardPayloadIdGenerator cardPayloadIdGenerator)
+	public QdrantService(ILogger<QdrantService> logger)
 	{
 		_logger = logger;
-		_cardPayloadIdGenerator = cardPayloadIdGenerator;
 		_client = CreateClient();
 	}
 
 	public async Task<List<CardPayload>> SearchAsync(float[] vector,
-		ulong limit)
+		ulong limit, SearchQuality searchQuality = SearchQuality.Normal)
 	{
-		var result = await _client.SearchAsync(CollectionName, vector, limit: limit);
+		var result = await _client.SearchAsync(CollectionName, vector, limit: limit, searchParams: new SearchParams()
+		{
+			HnswEf = (ulong)searchQuality
+		});
 
 		return result.Select(hit => new CardPayload(hit)).ToList();
 	}
@@ -36,11 +36,10 @@ public class QdrantService
 		float[] vector)
 	{
 		var payload = new CardPayload(card);
-		var id = _cardPayloadIdGenerator.GenerateId(card);
 
 		var point = new PointStruct()
 		{
-			Id = id,
+			Id = card.Id,
 			Vectors = vector,
 			Payload =
 			{
@@ -51,6 +50,13 @@ public class QdrantService
 		await _client.UpsertAsync(CollectionName, [point]);
 	}
 
+	public async Task RecreateCollectionAsync()
+	{
+		_logger.LogInformation("Recreating collection");
+		await _client.RecreateCollectionAsync(CollectionName, CreateVectorParams(), hnswConfig: CreateHnswConfig());
+		_logger.LogInformation("Recreation completed");
+	}
+
 	/// <summary>
 	/// Initializes the Qdrant service and makes sure the collection exists.
 	/// Should be called at startup.
@@ -59,12 +65,33 @@ public class QdrantService
 	{
 		if (!await _client.CollectionExistsAsync(CollectionName))
 		{
-			await _client.CreateCollectionAsync(CollectionName, new VectorParams()
-			{
-				Size = VectorSize,
-				Distance = VectorDistance,
-			});
+			await _client.CreateCollectionAsync(CollectionName, CreateVectorParams(), hnswConfig: CreateHnswConfig());
 		}
+	}
+
+	public enum SearchQuality
+	{
+		Dev = 64,
+		Normal = 128,
+		High = 256,
+	}
+
+	private static VectorParams CreateVectorParams()
+	{
+		return new VectorParams()
+		{
+			Size = VectorSize,
+			Distance = VectorDistance,
+		};
+	}
+
+	private static HnswConfigDiff CreateHnswConfig()
+	{
+		return new HnswConfigDiff()
+		{
+			M = 40,
+			EfConstruct = 512
+		};
 	}
 
 	private QdrantClient CreateClient()

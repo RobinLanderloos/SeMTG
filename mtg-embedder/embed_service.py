@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify
 from sentence_transformers import SentenceTransformer
 
 app = Flask(__name__)
-model = SentenceTransformer("all-MiniLM-L6-v2")
+model = SentenceTransformer("all-mpnet-base-v2")
 
 @app.route("/embed", methods=["POST"])
 def embed_text():
