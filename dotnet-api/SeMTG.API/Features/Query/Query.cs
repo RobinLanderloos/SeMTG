@@ -9,7 +9,7 @@ public static class Query
 {
 	public static void MapQuery(this IEndpointRouteBuilder builder)
 	{
-		builder.MapGet("/query", async Task<Ok<List<QdrantService.CardPayload>>> (IEmbeddingService embeddingService, QdrantService qdrantService, [FromQuery] string query, [FromQuery] ulong limit = 10) =>
+		builder.MapGet("/query", async Task<Ok<List<CardPayload>>> (IEmbeddingService embeddingService, QdrantService qdrantService, [FromQuery] string query, [FromQuery] ulong limit = 10) =>
 		{
 			var queryVector = await embeddingService.EmbedAsync(query);
 

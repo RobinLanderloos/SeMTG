@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using System.Text.Json;
+﻿using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using SeMTG.API.Database;
 using SeMTG.API.Embedding;
