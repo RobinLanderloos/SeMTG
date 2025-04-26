@@ -36,7 +36,9 @@ var qdrantService = scope.ServiceProvider.GetRequiredService<QdrantService>();
 
 await qdrantService.InitializeAsync();
 
+// Admin
 app.MapRecreateCollection();
+app.MapUpdateDatabase();
 
 app.MapImport();
 app.MapQuery();

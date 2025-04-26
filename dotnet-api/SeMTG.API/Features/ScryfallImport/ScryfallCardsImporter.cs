@@ -9,69 +9,121 @@ namespace SeMTG.API.Features.ScryfallImport;
 
 public class ScryfallCardsImporter(IEmbeddingService embeddingService, QdrantService qdrantService, ILogger<ScryfallCardsImporter> logger, IServiceScopeFactory serviceScopeFactory)
 {
-	private const int BatchSize = 1024;
+	private const int BatchSize = 64;
 
 	public async Task Import(string path)
 	{
 		try
 		{
 			logger.LogInformation("Starting import for path {Path}", path);
-			var cards = await LoadCardsAsync(path);
-			logger.LogDebug("Loaded {Count} cards", cards.Count);
 
+			var cards = await LoadAndFilterCardsAsync(path);
 
-			// Filter out tokens and empty cards
-			var filteredCards = cards.Where(card =>
-				!string.IsNullOrEmpty(card.OracleText) &&
-				!(card.TypeLine?.Contains("token", StringComparison.OrdinalIgnoreCase) ?? false)).ToList();
+			var chunks = SplitIntoChunks(cards);
 
-			logger.LogDebug("Filtered down to {Count} cards", filteredCards.Count);
+			await ProcessChunksAsync(chunks);
 
-			var chunks = filteredCards.Chunk(BatchSize).ToList();
-
-			logger.LogDebug("Split into {Count} chunks", chunks.Count);
-
-			// Process in batches
-			for (var i = 0; i < chunks.Count; i++)
-			{
-				logger.LogDebug("Processing chunk {Index} with {Count} cards", i, chunks[i].Length);
-
-				using var scope = serviceScopeFactory.CreateScope();
-				var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-
-				foreach (var card in chunks[i])
-				{
-					var existingCard = await dbContext.ScryfallCards.FirstOrDefaultAsync(x => x.Id == card.Id);
-					if (existingCard != null)
-					{
-						logger.LogDebug("Card {CardName} already exists", card.Name);
-						continue;
-					}
-
-					await dbContext.ScryfallCards.AddAsync(card);
-				}
-
-				logger.LogDebug("Saving changes for chunk {Index}", i);
-				await dbContext.SaveChangesAsync();
-
-				// Use the oracle text as the vector
-				var texts = chunks[i].Select(card => $"{card.Name} {card.TypeLine} {card.OracleText}").ToList();
-				var vectors = await embeddingService.EmbedBatchAsync(texts);
-
-				for (var y = 0; y < vectors.Count; y++)
-				{
-					logger.LogDebug("Upserting card {CardName} in chunk {ChunkIndex}", chunks[i][y].Name, i);
-					await qdrantService.UpsertCardAsync(chunks[i][y], vectors[y]);
-				}
-
-				logger.LogDebug("Chunk {Index} completed", i);
-			}
-
-			logger.LogInformation("Import completed");
+			logger.LogInformation("Import completed successfully.");
 		}
 		catch (Exception ex)
 		{
-			logger.LogError(ex, "Import failed");
+			logger.LogError(ex, "Import failed.");
+		}
+	}
+
+	private async Task<List<ScryfallCardObject>> LoadAndFilterCardsAsync(string path)
+	{
+		logger.LogInformation("Loading cards from {Path}", path);
+
+		var cards = await LoadCardsAsync(path);
+
+		logger.LogDebug("Loaded {Count} cards", cards.Count);
+
+		var filteredCards = cards
+			.Where(card =>
+				!string.IsNullOrEmpty(card.OracleText) &&
+				!(card.TypeLine?.Contains("token", StringComparison.OrdinalIgnoreCase) ?? false))
+			.ToList();
+
+		logger.LogInformation("Filtered down to {Count} cards", filteredCards.Count);
+
+		return filteredCards;
+	}
+
+	private List<ScryfallCardObject[]> SplitIntoChunks(List<ScryfallCardObject> cards)
+	{
+		var chunks = cards.Chunk(BatchSize).ToList();
+
+		logger.LogInformation("Split into {Count} chunks (BatchSize={BatchSize})", chunks.Count, BatchSize);
+
+		return chunks;
+	}
+
+	private async Task ProcessChunksAsync(List<ScryfallCardObject[]> chunks)
+	{
+		for (var i = 0; i < chunks.Count; i++)
+		{
+			var chunk = chunks[i];
+
+			logger.LogInformation("Processing chunk {ChunkIndex}/{ChunkCount} with {CardCount} cards", i, chunks.Count, chunk.Length);
+
+			await using var scope = serviceScopeFactory.CreateAsyncScope();
+			var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+			await AddCardsToDatabaseAsync(dbContext, chunk);
+
+			await UpsertVectorsAsync(dbContext, chunk);
+
+			logger.LogInformation("Finished processing chunk {ChunkIndex}/{ChunkCount}", i, chunks.Count);
+		}
+	}
+
+	private async Task AddCardsToDatabaseAsync(ApplicationDbContext dbContext,
+		ScryfallCardObject[] cards)
+	{
+		foreach (var card in cards)
+		{
+			var existingCard = await dbContext.ScryfallCards.FirstOrDefaultAsync(x => x.Id == card.Id);
+			if (existingCard != null)
+			{
+				logger.LogDebug("Card {CardName} already exists, skipping", card.Name);
+				continue;
+			}
+
+			await dbContext.ScryfallCards.AddAsync(card);
+		}
+
+		logger.LogInformation("Saving new cards to database");
+
+		await dbContext.SaveChangesAsync();
+	}
+
+	private async Task UpsertVectorsAsync(ApplicationDbContext dbContext, ScryfallCardObject[] cards)
+	{
+		var texts = cards
+			.Select(card => $"{card.Name} {card.TypeLine} {card.OracleText}")
+			.ToList();
+
+		logger.LogInformation("Embedding cards");
+
+		var vectors = await embeddingService.EmbedBatchAsync(texts);
+
+		for (var i = 0; i < vectors.Count; i++)
+		{
+			logger.LogDebug("Upserting card {CardName} to Qdrant", cards[i].Name);
+			var card = cards[i];
+
+			var existingQdrantInfo = await dbContext.QdrantInfo.FirstOrDefaultAsync(x => x.ScryfallCardObjectId == card.Id);
+			if (existingQdrantInfo != null)
+			{
+				logger.LogDebug("Card {CardName} already has Qdrant info, skipping", card.Name);
+				continue;
+			}
+
+			var qdrantInfo = new QdrantInfo(card.Id, vectors[i]);
+			await dbContext.QdrantInfo.AddAsync(qdrantInfo);
+			await qdrantService.UpsertCardAsync(cards[i], vectors[i]);
+			await dbContext.SaveChangesAsync();
 		}
 	}
 
