@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using SeMTG.API.Database;
 using SeMTG.API.Embedding;
+using SeMTG.API.Features.Admin;
 using SeMTG.API.Features.Query;
 using SeMTG.API.Features.ScryfallImport;
 using SeMTG.API.Qdrant;
@@ -34,6 +35,8 @@ using var scope = app.Services.CreateScope();
 var qdrantService = scope.ServiceProvider.GetRequiredService<QdrantService>();
 
 await qdrantService.InitializeAsync();
+
+app.MapRecreateCollection();
 
 app.MapImport();
 app.MapQuery();
