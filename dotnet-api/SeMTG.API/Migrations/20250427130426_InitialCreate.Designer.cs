@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SeMTG.API.Database;
@@ -12,9 +13,11 @@ using SeMTG.API.Database;
 namespace SeMTG.API.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250427130426_InitialCreate")]
+    partial class InitialCreate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -197,8 +200,8 @@ namespace SeMTG.API.Migrations
                         .HasColumnType("text")
                         .HasAnnotation("Relational:JsonPropertyName", "rarity");
 
-                    b.Property<DateOnly>("ReleasedAt")
-                        .HasColumnType("date")
+                    b.Property<DateTime>("ReleasedAt")
+                        .HasColumnType("timestamp with time zone")
                         .HasAnnotation("Relational:JsonPropertyName", "released_at");
 
                     b.Property<bool?>("Reprint")

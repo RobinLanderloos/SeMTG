@@ -4,8 +4,8 @@ namespace SeMTG.API.Models;
 
 public class PurchaseUris
 {
-	public Guid Id { get; set; }
-	public Guid ScryfallCardObjectId { get; set; }
+	public Guid CardEditionId { get; set; }
+	public CardEdition CardEdition { get; set; } = null!;
 	[JsonPropertyName("tcgplayer")] public string Tcgplayer { get; set; }
 
 	[JsonPropertyName("cardmarket")] public string Cardmarket { get; set; }

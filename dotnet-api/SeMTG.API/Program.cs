@@ -2,9 +2,11 @@ using Microsoft.EntityFrameworkCore;
 using SeMTG.API.Database;
 using SeMTG.API.Embedding;
 using SeMTG.API.Features.Admin;
+using SeMTG.API.Features.Embedding;
 using SeMTG.API.Features.Query;
 using SeMTG.API.Features.ScryfallImport;
 using SeMTG.API.Qdrant;
+using SeMTG.API.ScryfallImport;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,6 +19,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddSingleton<QdrantService>();
 builder.Services.AddScoped<IEmbeddingService, PythonHttpEmbeddingService>();
 builder.Services.AddScoped<ScryfallCardsImporter>();
+builder.Services.AddScoped<CardEmbedder>();
 
 var app = builder.Build();
 
@@ -37,11 +40,27 @@ var qdrantService = scope.ServiceProvider.GetRequiredService<QdrantService>();
 await qdrantService.InitializeAsync();
 
 // Admin
-app.MapRecreateCollection();
-app.MapUpdateDatabase();
+var adminGroup = app
+	.MapGroup("/admin");
+adminGroup.MapRecreateCollection();
+adminGroup.MapUpdateDatabase();
+adminGroup.MapGetCardsWithMultipleDistinctOracleTexts();
 
-app.MapImport();
-app.MapQuery();
+// Embedding
+var embeddingGroup = app
+	.MapGroup("/embedding");
+embeddingGroup.MapGenerateEmbedding();
+GenerateMissingEmbeddings.MapGenerateMissingEmbeddings(embeddingGroup);
+
+// Import
+var importGroup = app
+	.MapGroup("/import");
+importGroup.MapImport();
+
+// Query
+var queryGroup = app
+	.MapGroup("/query");
+queryGroup.MapQuery();
 
 app.UseHttpsRedirection();
 

@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http.HttpResults;
+using SeMTG.API.ScryfallImport;
 
 namespace SeMTG.API.Features.ScryfallImport;
 

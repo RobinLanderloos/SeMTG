@@ -5,7 +5,7 @@ namespace SeMTG.API.Qdrant;
 
 public record CardPayload(string Name, string TypeLine, string OracleText)
 {
-	public CardPayload(ScryfallCardObject card) : this(card.Name, card.TypeLine, card.OracleText)
+	public CardPayload(CardEdition card) : this(card.Name, card.TypeLine, card.OracleText)
 	{
 	}
 

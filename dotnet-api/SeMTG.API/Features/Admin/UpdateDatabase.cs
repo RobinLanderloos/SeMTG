@@ -8,7 +8,7 @@ public static class UpdateDatabase
 {
 	public static void MapUpdateDatabase(this IEndpointRouteBuilder builder)
 	{
-		builder.MapPost("/admin/update-database", UpdateDatabaseAsync);
+		builder.MapPost("/update-database", UpdateDatabaseAsync);
 	}
 
 	public static async Task<Results<Ok, InternalServerError<string>>> UpdateDatabaseAsync(ApplicationDbContext dbContext)

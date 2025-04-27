@@ -22,7 +22,8 @@ public class QdrantService
 	}
 
 	public async Task<List<CardPayload>> SearchAsync(float[] vector,
-		ulong limit, SearchQuality searchQuality = SearchQuality.Normal)
+		ulong limit,
+		SearchQuality searchQuality = SearchQuality.Normal)
 	{
 		var result = await _client.SearchAsync(CollectionName, vector, limit: limit, searchParams: new SearchParams()
 		{
@@ -32,20 +33,17 @@ public class QdrantService
 		return result.Select(hit => new CardPayload(hit)).ToList();
 	}
 
-	public async Task UpsertCardAsync(ScryfallCardObject card,
+	public async Task UpsertCardsAsync(List<(CardEdition Edition, float[] Vector)> cardEditionsAndVectors)
+	{
+		var points = cardEditionsAndVectors.Select(x => x.Edition.ToPointStruct(x.Vector)).ToList();
+
+		await _client.UpsertAsync(CollectionName, points);
+	}
+
+	public async Task UpsertCardAsync(CardEdition cardEdition,
 		float[] vector)
 	{
-		var payload = new CardPayload(card);
-
-		var point = new PointStruct()
-		{
-			Id = card.Id,
-			Vectors = vector,
-			Payload =
-			{
-				payload.ToMap()
-			}
-		};
+		var point = cardEdition.ToPointStruct(vector);
 
 		await _client.UpsertAsync(CollectionName, [point]);
 	}
@@ -98,5 +96,22 @@ public class QdrantService
 	{
 		_logger.LogDebug("Creating Qdrant client with {Host}:{Port}", Host, Port);
 		return new QdrantClient(Host, Port, https: false);
+	}
+}
+
+public static class ScryfallCardObjectExtensions
+{
+	public static PointStruct ToPointStruct(this CardEdition cardEdition, float[] vectors)
+	{
+		var payload = new CardPayload(cardEdition);
+		return new PointStruct()
+		{
+			Id = cardEdition.CardId,
+			Vectors = vectors,
+			Payload =
+			{
+				payload.ToMap()
+			}
+		};
 	}
 }

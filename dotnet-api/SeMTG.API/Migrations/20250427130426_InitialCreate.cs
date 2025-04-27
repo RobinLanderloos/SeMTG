@@ -13,10 +13,24 @@ namespace SeMTG.API.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "ScryfallCards",
+                name: "Cards",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "text", nullable: false),
+                    Vector = table.Column<float[]>(type: "real[]", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Cards", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "CardEditions",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    CardId = table.Column<Guid>(type: "uuid", nullable: false),
                     Object = table.Column<string>(type: "text", nullable: true),
                     OracleId = table.Column<string>(type: "text", nullable: true),
                     MultiverseIds = table.Column<List<int?>>(type: "integer[]", nullable: true),
@@ -25,7 +39,7 @@ namespace SeMTG.API.Migrations
                     TcgplayerId = table.Column<int>(type: "integer", nullable: true),
                     Name = table.Column<string>(type: "text", nullable: true),
                     Lang = table.Column<string>(type: "text", nullable: true),
-                    ReleasedAt = table.Column<string>(type: "text", nullable: true),
+                    ReleasedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     Uri = table.Column<string>(type: "text", nullable: true),
                     ScryfallUri = table.Column<string>(type: "text", nullable: true),
                     Layout = table.Column<string>(type: "text", nullable: true),
@@ -74,15 +88,20 @@ namespace SeMTG.API.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ScryfallCards", x => x.Id);
+                    table.PrimaryKey("PK_CardEditions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_CardEditions_Cards_CardId",
+                        column: x => x.CardId,
+                        principalTable: "Cards",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
                 name: "ImageUris",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    ScryfallCardObjectId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CardEditionId = table.Column<Guid>(type: "uuid", nullable: false),
                     Small = table.Column<string>(type: "text", nullable: false),
                     Normal = table.Column<string>(type: "text", nullable: false),
                     Large = table.Column<string>(type: "text", nullable: false),
@@ -92,11 +111,11 @@ namespace SeMTG.API.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ImageUris", x => x.Id);
+                    table.PrimaryKey("PK_ImageUris", x => x.CardEditionId);
                     table.ForeignKey(
-                        name: "FK_ImageUris_ScryfallCards_ScryfallCardObjectId",
-                        column: x => x.ScryfallCardObjectId,
-                        principalTable: "ScryfallCards",
+                        name: "FK_ImageUris_CardEditions_CardEditionId",
+                        column: x => x.CardEditionId,
+                        principalTable: "CardEditions",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -105,8 +124,7 @@ namespace SeMTG.API.Migrations
                 name: "Legalities",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    ScryfallCardObjectId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CardEditionId = table.Column<Guid>(type: "uuid", nullable: false),
                     Standard = table.Column<string>(type: "text", nullable: false),
                     Future = table.Column<string>(type: "text", nullable: false),
                     Historic = table.Column<string>(type: "text", nullable: false),
@@ -132,11 +150,11 @@ namespace SeMTG.API.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Legalities", x => x.Id);
+                    table.PrimaryKey("PK_Legalities", x => x.CardEditionId);
                     table.ForeignKey(
-                        name: "FK_Legalities_ScryfallCards_ScryfallCardObjectId",
-                        column: x => x.ScryfallCardObjectId,
-                        principalTable: "ScryfallCards",
+                        name: "FK_Legalities_CardEditions_CardEditionId",
+                        column: x => x.CardEditionId,
+                        principalTable: "CardEditions",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -145,22 +163,21 @@ namespace SeMTG.API.Migrations
                 name: "Prices",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    ScryfallCardObjectId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Usd = table.Column<string>(type: "text", nullable: false),
-                    UsdFoil = table.Column<string>(type: "text", nullable: false),
-                    UsdEtched = table.Column<string>(type: "text", nullable: false),
-                    Eur = table.Column<string>(type: "text", nullable: false),
-                    EurFoil = table.Column<string>(type: "text", nullable: false),
-                    Tix = table.Column<string>(type: "text", nullable: false)
+                    CardEditionId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Usd = table.Column<string>(type: "text", nullable: true),
+                    UsdFoil = table.Column<string>(type: "text", nullable: true),
+                    UsdEtched = table.Column<string>(type: "text", nullable: true),
+                    Eur = table.Column<string>(type: "text", nullable: true),
+                    EurFoil = table.Column<string>(type: "text", nullable: true),
+                    Tix = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Prices", x => x.Id);
+                    table.PrimaryKey("PK_Prices", x => x.CardEditionId);
                     table.ForeignKey(
-                        name: "FK_Prices_ScryfallCards_ScryfallCardObjectId",
-                        column: x => x.ScryfallCardObjectId,
-                        principalTable: "ScryfallCards",
+                        name: "FK_Prices_CardEditions_CardEditionId",
+                        column: x => x.CardEditionId,
+                        principalTable: "CardEditions",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -169,19 +186,18 @@ namespace SeMTG.API.Migrations
                 name: "PurchaseUris",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    ScryfallCardObjectId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CardEditionId = table.Column<Guid>(type: "uuid", nullable: false),
                     Tcgplayer = table.Column<string>(type: "text", nullable: false),
                     Cardmarket = table.Column<string>(type: "text", nullable: false),
                     Cardhoarder = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_PurchaseUris", x => x.Id);
+                    table.PrimaryKey("PK_PurchaseUris", x => x.CardEditionId);
                     table.ForeignKey(
-                        name: "FK_PurchaseUris_ScryfallCards_ScryfallCardObjectId",
-                        column: x => x.ScryfallCardObjectId,
-                        principalTable: "ScryfallCards",
+                        name: "FK_PurchaseUris_CardEditions_CardEditionId",
+                        column: x => x.CardEditionId,
+                        principalTable: "CardEditions",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -190,68 +206,47 @@ namespace SeMTG.API.Migrations
                 name: "RelatedUris",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    ScryfallCardObjectId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Gatherer = table.Column<string>(type: "text", nullable: false),
-                    TcgplayerInfiniteArticles = table.Column<string>(type: "text", nullable: false),
-                    TcgplayerInfiniteDecks = table.Column<string>(type: "text", nullable: false),
-                    Edhrec = table.Column<string>(type: "text", nullable: false)
+                    CardEditionId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Gatherer = table.Column<string>(type: "text", nullable: true),
+                    TcgplayerInfiniteArticles = table.Column<string>(type: "text", nullable: true),
+                    TcgplayerInfiniteDecks = table.Column<string>(type: "text", nullable: true),
+                    Edhrec = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_RelatedUris", x => x.Id);
+                    table.PrimaryKey("PK_RelatedUris", x => x.CardEditionId);
                     table.ForeignKey(
-                        name: "FK_RelatedUris_ScryfallCards_ScryfallCardObjectId",
-                        column: x => x.ScryfallCardObjectId,
-                        principalTable: "ScryfallCards",
+                        name: "FK_RelatedUris_CardEditions_CardEditionId",
+                        column: x => x.CardEditionId,
+                        principalTable: "CardEditions",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_ImageUris_ScryfallCardObjectId",
-                table: "ImageUris",
-                column: "ScryfallCardObjectId",
-                unique: true);
+                name: "IX_CardEditions_CardId",
+                table: "CardEditions",
+                column: "CardId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Legalities_ScryfallCardObjectId",
-                table: "Legalities",
-                column: "ScryfallCardObjectId",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Prices_ScryfallCardObjectId",
-                table: "Prices",
-                column: "ScryfallCardObjectId",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_PurchaseUris_ScryfallCardObjectId",
-                table: "PurchaseUris",
-                column: "ScryfallCardObjectId",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_RelatedUris_ScryfallCardObjectId",
-                table: "RelatedUris",
-                column: "ScryfallCardObjectId",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ScryfallCards_Name",
-                table: "ScryfallCards",
+                name: "IX_CardEditions_Name",
+                table: "CardEditions",
                 column: "Name");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ScryfallCards_OracleText",
-                table: "ScryfallCards",
+                name: "IX_CardEditions_OracleText",
+                table: "CardEditions",
                 column: "OracleText");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ScryfallCards_TypeLine",
-                table: "ScryfallCards",
+                name: "IX_CardEditions_TypeLine",
+                table: "CardEditions",
                 column: "TypeLine");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Cards_Name",
+                table: "Cards",
+                column: "Name");
         }
 
         /// <inheritdoc />
@@ -273,7 +268,10 @@ namespace SeMTG.API.Migrations
                 name: "RelatedUris");
 
             migrationBuilder.DropTable(
-                name: "ScryfallCards");
+                name: "CardEditions");
+
+            migrationBuilder.DropTable(
+                name: "Cards");
         }
     }
 }

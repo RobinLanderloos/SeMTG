@@ -4,8 +4,8 @@ namespace SeMTG.API.Models;
 
 public class Prices
 {
-	public Guid Id { get; set; }
-	public Guid ScryfallCardObjectId { get; set; }
+	public Guid CardEditionId { get; set; }
+	public CardEdition CardEdition { get; set; } = null!;
 	[JsonPropertyName("usd")] public string? Usd { get; set; }
 
 	[JsonPropertyName("usd_foil")] public string? UsdFoil { get; set; }

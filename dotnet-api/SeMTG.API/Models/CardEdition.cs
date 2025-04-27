@@ -4,8 +4,11 @@ namespace SeMTG.API.Models;
 
 #nullable disable
 
-public class ScryfallCardObject
+public class CardEdition
 {
+	public Guid CardId { get; set; }
+	public Card Card { get; set; } = null!;
+
 	[JsonPropertyName("id")] public Guid Id { get; set; }
 
 	[JsonPropertyName("object")] public string Object { get; set; }
@@ -24,7 +27,7 @@ public class ScryfallCardObject
 
 	[JsonPropertyName("lang")] public string Lang { get; set; }
 
-	[JsonPropertyName("released_at")] public string ReleasedAt { get; set; }
+	[JsonPropertyName("released_at")] public DateOnly ReleasedAt { get; set; }
 
 	[JsonPropertyName("uri")] public string Uri { get; set; }
 

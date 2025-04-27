@@ -4,8 +4,8 @@ namespace SeMTG.API.Models;
 
 public class Legalities
 {
-	public Guid Id { get; set; }
-	public Guid ScryfallCardObjectId { get; set; }
+	public Guid CardEditionId { get; set; }
+	public CardEdition CardEdition { get; set; } = null!;
 	[JsonPropertyName("standard")] public string Standard { get; set; }
 
 	[JsonPropertyName("future")] public string Future { get; set; }
