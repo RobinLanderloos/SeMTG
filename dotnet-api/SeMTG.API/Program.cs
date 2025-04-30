@@ -1,10 +1,11 @@
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
 using SeMTG.API.Database;
 using SeMTG.API.Embedding;
 using SeMTG.API.Features.Admin;
 using SeMTG.API.Features.Embedding;
-using SeMTG.API.Features.Query;
 using SeMTG.API.Features.ScryfallImport;
+using SeMTG.API.Features.Search;
 using SeMTG.API.Qdrant;
 using SeMTG.API.ScryfallImport;
 
@@ -14,12 +15,14 @@ var builder = WebApplication.CreateBuilder(args);
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("Postgres")));
+	options.UseNpgsql(builder.Configuration.GetConnectionString("Postgres")));
 
 builder.Services.AddSingleton<QdrantService>();
 builder.Services.AddScoped<IEmbeddingService, PythonHttpEmbeddingService>();
 builder.Services.AddScoped<ScryfallCardsImporter>();
 builder.Services.AddScoped<CardEmbedder>();
+
+// Add services to the container
 
 var app = builder.Build();
 
@@ -28,10 +31,11 @@ if (app.Environment.IsDevelopment())
 {
 	app.MapOpenApi();
 
-	app.UseSwaggerUI(options =>
-	{
-		options.SwaggerEndpoint("/openapi/v1.json", "SeMTG API V1");
-	});
+	app.UseSwaggerUI(options => { options.SwaggerEndpoint("/openapi/v1.json", "SeMTG API V1"); });
+}
+else
+{
+	app.UseHttpsRedirection();
 }
 
 using var scope = app.Services.CreateScope();
@@ -58,10 +62,9 @@ var importGroup = app
 importGroup.MapImport();
 
 // Query
-var queryGroup = app
-	.MapGroup("/query");
-queryGroup.MapQuery();
+var searchGroup = app
+	.MapGroup("/search");
+searchGroup.MapSearch();
 
-app.UseHttpsRedirection();
 
 await app.RunAsync();

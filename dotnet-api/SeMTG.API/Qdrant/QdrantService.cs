@@ -21,7 +21,7 @@ public class QdrantService
 		_client = CreateClient();
 	}
 
-	public async Task<List<CardPayload>> SearchAsync(float[] vector,
+	public async Task<List<ScoredPoint>> SearchAsync(float[] vector,
 		ulong limit,
 		SearchQuality searchQuality = SearchQuality.Normal)
 	{
@@ -30,7 +30,7 @@ public class QdrantService
 			HnswEf = (ulong)searchQuality
 		});
 
-		return result.Select(hit => new CardPayload(hit)).ToList();
+		return result.ToList();
 	}
 
 	public async Task UpsertCardsAsync(List<(CardEdition Edition, float[] Vector)> cardEditionsAndVectors)
