@@ -1,0 +1,38 @@
+.cardDetailContainer {
+    max-width: 75%;
+    margin: 0 auto;
+}
+
+.cardName {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 1.5rem;
+    text-align: center;
+  }
+  
+  .edition {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .cardImage {
+    width: 100%;
+    max-width: 400px;
+    height: auto;
+    border-radius: 8px;
+  }
+  
+  .editionName {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0.5rem 0;
+    text-align: center;
+  }
+  
+  p {
+    margin: 0.25rem 0;
+    text-align: center;
+  }
+  
