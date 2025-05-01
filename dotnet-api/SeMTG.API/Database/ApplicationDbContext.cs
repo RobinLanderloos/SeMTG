@@ -4,7 +4,7 @@ using SeMTG.API.Models;
 
 namespace SeMTG.API.Database;
 
-public class ApplicationDbContext : DbContext
+public sealed class ApplicationDbContext : DbContext
 {
 	public DbSet<Card> Cards { get; set; }
 	public DbSet<CardEdition> CardEditions { get; set; }
@@ -16,6 +16,7 @@ public class ApplicationDbContext : DbContext
 
 	public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
 	{
+		ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
 	}
 
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -41,6 +42,7 @@ public class ApplicationDbContext : DbContext
 	{
 		var cardEditionBuilder = modelBuilder.Entity<CardEdition>();
 		cardEditionBuilder.HasIndex(card => card.Name);
+		cardEditionBuilder.HasIndex(card => card.CardId);
 		cardEditionBuilder.HasIndex(card => card.TypeLine);
 		cardEditionBuilder.HasIndex(card => card.OracleText);
 

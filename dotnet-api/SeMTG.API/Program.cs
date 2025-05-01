@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using SeMTG.API.Database;
 using SeMTG.API.Embedding;
 using SeMTG.API.Features.Admin;
+using SeMTG.API.Features.Card;
 using SeMTG.API.Features.Embedding;
 using SeMTG.API.Features.ScryfallImport;
 using SeMTG.API.Features.Search;
@@ -16,6 +17,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 	options.UseNpgsql(builder.Configuration.GetConnectionString("Postgres")));
+builder.Services.AddMemoryCache();
 
 builder.Services.AddSingleton<QdrantService>();
 builder.Services.AddScoped<IEmbeddingService, PythonHttpEmbeddingService>();
@@ -48,7 +50,6 @@ var adminGroup = app
 	.MapGroup("/admin");
 adminGroup.MapRecreateCollection();
 adminGroup.MapUpdateDatabase();
-adminGroup.MapGetCardsWithMultipleDistinctOracleTexts();
 
 // Embedding
 var embeddingGroup = app
@@ -61,10 +62,15 @@ var importGroup = app
 	.MapGroup("/import");
 importGroup.MapImport();
 
-// Query
+// Search
 var searchGroup = app
 	.MapGroup("/search");
 searchGroup.MapSearch();
+
+// Card
+var cardGroup = app
+	.MapGroup("/card");
+CardDetail.MapCardDetail(cardGroup);
 
 
 await app.RunAsync();

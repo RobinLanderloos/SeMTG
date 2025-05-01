@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using SeMTG.API.Database;
 using SeMTG.API.Embedding;
 using SeMTG.API.Qdrant;
@@ -21,7 +22,7 @@ public static class GenerateEmbedding
 	{
 		try
 		{
-			var card = await dbContext.Cards.Include(card => card.Editions).FirstOrDefaultAsync(x => x.Id == cardId);
+			var card = await dbContext.Cards.AsTracking().Include(card => card.Editions).FirstOrDefaultAsync(x => x.Id == cardId);
 
 			if (card == null)
 			{

@@ -1,0 +1,7 @@
+.titleBar {
+    display: flex;
+    flex-grow: 1;
+    align-items: start;
+    padding: 1rem;
+    border-bottom: 1px solid #ccc;
+}

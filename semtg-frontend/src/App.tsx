@@ -1,14 +1,19 @@
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import SearchPage from "./pages/search"; // Adjust this import to your correct path
+import SearchPage from "./pages/Search/SearchPage"; // Adjust this import to your correct path
+import TitleBar from "./components/TitleBar/TitleBar";
+import CardDetail from "./pages/CardDetail/CardDetail";
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        {/* Define the routes here */}
-        <Route path="/search" element={<SearchPage />} />
-      </Routes>
-    </Router>
+    <div id="root" className="app-container">
+      <Router>
+        <TitleBar />
+        <Routes>
+          <Route path="/search" element={<SearchPage />} />
+          <Route path="/card/:id" element={<CardDetail />} />
+        </Routes>
+      </Router>
+    </div>
   );
 }
 

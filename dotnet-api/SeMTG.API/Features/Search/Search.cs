@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Qdrant.Client.Grpc;
 using SeMTG.API.Database;
 using SeMTG.API.Embedding;
+using SeMTG.API.Features.Shared.Models;
 using SeMTG.API.Models;
 using SeMTG.API.Qdrant;
 
@@ -13,35 +14,49 @@ public static class Search
 {
 	public static void MapSearch(this IEndpointRouteBuilder builder)
 	{
-		builder.MapGet("", async Task<Ok<List<Hit>>> (IEmbeddingService embeddingService,
+		builder.MapGet("", async Task<Ok<SearchResult>> (IEmbeddingService embeddingService,
 			QdrantService qdrantService,
 			ApplicationDbContext dbContext,
 			[FromQuery] string query,
-			[FromQuery] ulong limit = 10) =>
+			[FromQuery] int limit = 10) =>
 		{
+			if (string.IsNullOrEmpty(query))
+			{
+				var results = dbContext
+					.Cards
+					.Include(c => c.Editions)
+					.ThenInclude(e => e.ImageUris)
+					.Take(limit)
+					.AsEnumerable()
+					.Select(card => new SearchResultCard(card.Id, card.Name, 1, card.Editions.LastOrDefault() == null ? new ImageUrisDto("", "", "", "", "", "") : new ImageUrisDto(card.Editions.Last().ImageUris)))
+					.ToList();
+
+				return TypedResults.Ok(new SearchResult(results));
+			}
+
+
 			var queryVector = await embeddingService.EmbedAsync(query);
 
-			var scoredPoints = await qdrantService.SearchAsync(queryVector, limit);
+			var scoredPoints = await qdrantService.SearchAsync(queryVector, (ulong)limit);
 
-			var hitsWithCards = new List<Hit>();
-
+			var searchResultCards = new List<SearchResultCard>();
 			foreach (var scoredPoint in scoredPoints)
 			{
-				var hit = await scoredPoint.ToHit(dbContext);
+				var card = await scoredPoint.ToSearchResultCard(dbContext);
 
-				if (hit == null)
+				if (card == null)
 				{
 					continue;
 				}
 
-				hitsWithCards.Add(hit);
+				searchResultCards.Add(card);
 			}
 
-			return TypedResults.Ok(hitsWithCards);
+			return TypedResults.Ok(new SearchResult(searchResultCards));
 		});
 	}
 
-	private static async Task<Hit?> ToHit(this ScoredPoint scoredPoint,
+	private static async Task<SearchResultCard?> ToSearchResultCard(this ScoredPoint scoredPoint,
 		ApplicationDbContext dbContext)
 	{
 		var pointId = Guid.Parse(scoredPoint.Id.Uuid);
@@ -55,25 +70,10 @@ public static class Search
 			return null;
 		}
 
-		var result = new CardResult(card, card.Vector);
-		var hit = new Hit(result, scoredPoint.Score);
-		return hit;
-	}
-
-	public record Hit(CardResult Card, float Score);
-
-	public record CardResult(Guid Id, string Name, float[]? Vectors, IReadOnlyCollection<CardEditionResult> Editions)
-	{
-		public CardResult(Card card,
-			float[]? vectors) : this(card.Id, card.Name, vectors, card.Editions.Select(edition => new CardEditionResult(edition)).ToList())
-		{
-		}
-	}
-
-	public record CardEditionResult(Guid Id, string Name, DateOnly ReleasedAt, string ScryfallUri, string ManaCost, string TypeLine, string OracleText, string ImageUri)
-	{
-		public CardEditionResult(CardEdition edition) : this(edition.Id, edition.Name, edition.ReleasedAt, edition.ScryfallUri, edition.ManaCost, edition.TypeLine, edition.OracleText, edition.ImageUris.Large)
-		{
-		}
+		return new SearchResultCard(card.Id, card.Name, scoredPoint.Score, new(card.Editions.Last().ImageUris));
 	}
 }
+
+public record SearchResult(IReadOnlyCollection<SearchResultCard> Cards);
+
+public record SearchResultCard(Guid Id, string Name, float score, ImageUrisDto ImageUris);

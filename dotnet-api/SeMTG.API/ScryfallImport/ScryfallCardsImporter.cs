@@ -78,7 +78,7 @@ public class ScryfallCardsImporter(ILogger<ScryfallCardsImporter> logger, IServi
     {
         foreach (var cardEdition in cardEditions)
         {
-            var existingEdition = await dbContext.CardEditions.FirstOrDefaultAsync(x => x.Id == cardEdition.Id);
+            var existingEdition = await dbContext.CardEditions.AsTracking().FirstOrDefaultAsync(x => x.Id == cardEdition.Id);
             if (existingEdition != null)
             {
                 logger.LogDebug("Card edition {CardName} already exists, skipping", cardEdition.Name);
@@ -86,7 +86,7 @@ public class ScryfallCardsImporter(ILogger<ScryfallCardsImporter> logger, IServi
             }
 
             logger.LogDebug("Adding card edition {CardName}", cardEdition.Name);
-            var card = await dbContext.Cards.FirstOrDefaultAsync(x => x.Name == cardEdition.Name);
+            var card = await dbContext.Cards.AsTracking().FirstOrDefaultAsync(x => x.Name == cardEdition.Name);
 
             if (card == null)
             {

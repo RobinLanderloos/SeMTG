@@ -2,33 +2,44 @@
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-export interface Hit {
-  card: CardResult;
+export interface SearchResult {
+  cards: SearchResultCard[];
+}
+
+export interface SearchResultCard {
+  id: string;
+  name: string;
   score: number;
+  imageUris: ImageUris;
 }
 
-export interface CardResult {
-  id: string; // Guid as string
-  name: string;
-  vectors?: number[]; // float[] in C#
-  editions: CardEditionResult[];
+export interface ImageUris {
+  small: string;
+  normal: string;
+  large: string;
+  png: string;
+  artCrop: string;
+  borderCrop: string;
 }
 
-export interface CardEditionResult {
-  id: string; // Guid as string
+export interface CardDetailResult {
+  id: string;
   name: string;
-  releasedAt: string; // DateOnly as ISO date string
-  scryfallUri: string;
-  manaCost: string;
+  editions: CardEditionDetail[];
+}
+
+export interface CardEditionDetail {
+  id: string;
+  name: string;
   typeLine: string;
   oracleText: string;
-  imageUri: string;
+  imageUris: ImageUris;
 }
 
 export async function searchCards(
   query: string,
   limit: number = 20
-): Promise<Hit[]> {
+): Promise<SearchResult> {
   const url = new URL("/search", BASE_URL);
   url.searchParams.append("query", query);
   url.searchParams.append("limit", limit.toString());
@@ -39,7 +50,19 @@ export async function searchCards(
     throw new Error(`Search request failed: ${response.statusText}`);
   }
 
-  const data: Hit[] = await response.json();
-  console.log(data);
+  const data: SearchResult = await response.json();
+  return data;
+}
+
+export async function getCard(id: string): Promise<CardDetailResult> {
+  const url = new URL(`/card/${id}`, BASE_URL);
+
+  const response = await fetch(url.toString());
+
+  if (!response.ok) {
+    throw new Error(`Card request failed: ${response.statusText}`);
+  }
+
+  const data: CardDetailResult = await response.json();
   return data;
 }

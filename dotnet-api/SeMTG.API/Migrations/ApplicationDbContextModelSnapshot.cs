@@ -40,7 +40,7 @@ namespace SeMTG.API.Migrations
 
                     b.HasIndex("Name");
 
-                    b.ToTable("Cards");
+                    b.ToTable("Cards", (string)null);
                 });
 
             modelBuilder.Entity("SeMTG.API.Models.CardEdition", b =>
@@ -279,7 +279,7 @@ namespace SeMTG.API.Migrations
 
                     b.HasIndex("TypeLine");
 
-                    b.ToTable("CardEditions");
+                    b.ToTable("CardEditions", (string)null);
                 });
 
             modelBuilder.Entity("SeMTG.API.Models.ImageUris", b =>
@@ -319,7 +319,7 @@ namespace SeMTG.API.Migrations
 
                     b.HasKey("CardEditionId");
 
-                    b.ToTable("ImageUris");
+                    b.ToTable("ImageUris", (string)null);
 
                     b.HasAnnotation("Relational:JsonPropertyName", "image_uris");
                 });
@@ -441,7 +441,7 @@ namespace SeMTG.API.Migrations
 
                     b.HasKey("CardEditionId");
 
-                    b.ToTable("Legalities");
+                    b.ToTable("Legalities", (string)null);
 
                     b.HasAnnotation("Relational:JsonPropertyName", "legalities");
                 });
@@ -477,7 +477,7 @@ namespace SeMTG.API.Migrations
 
                     b.HasKey("CardEditionId");
 
-                    b.ToTable("Prices");
+                    b.ToTable("Prices", (string)null);
 
                     b.HasAnnotation("Relational:JsonPropertyName", "prices");
                 });
@@ -504,7 +504,7 @@ namespace SeMTG.API.Migrations
 
                     b.HasKey("CardEditionId");
 
-                    b.ToTable("PurchaseUris");
+                    b.ToTable("PurchaseUris", (string)null);
 
                     b.HasAnnotation("Relational:JsonPropertyName", "purchase_uris");
                 });
@@ -532,7 +532,7 @@ namespace SeMTG.API.Migrations
 
                     b.HasKey("CardEditionId");
 
-                    b.ToTable("RelatedUris");
+                    b.ToTable("RelatedUris", (string)null);
 
                     b.HasAnnotation("Relational:JsonPropertyName", "related_uris");
                 });

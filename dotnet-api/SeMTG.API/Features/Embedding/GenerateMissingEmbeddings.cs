@@ -46,7 +46,7 @@ public class GenerateMissingEmbeddings
 			}
 
 			await qdrantService.UpsertCardsAsync(zipped);
-			await dbContext.SaveChangesAsync();
+			await dbContext.SaveChangesAsync(cancellationToken);
 			i++;
 		}
 	}
