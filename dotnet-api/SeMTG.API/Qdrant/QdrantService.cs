@@ -7,17 +7,21 @@ namespace SeMTG.API.Qdrant;
 public class QdrantService
 {
 	private const string CollectionName = "mtg-cards";
-	private const string Host = "localhost";
-	private const int Port = 6334;
+	private readonly string _host;
+	private readonly int _port;
 	private const ulong VectorSize = 768;
 	private const Distance VectorDistance = Distance.Cosine;
 
 	private readonly ILogger<QdrantService> _logger;
 	private readonly QdrantClient _client;
 
-	public QdrantService(ILogger<QdrantService> logger)
+	public QdrantService(ILogger<QdrantService> logger,
+		IConfiguration configuration)
 	{
 		_logger = logger;
+		_port = int.Parse(configuration["Qdrant:Port"] ?? throw new InvalidOperationException("Qdrant:Port is not set"));
+		_host = configuration["Qdrant:Host"] ?? throw new InvalidOperationException("Qdrant:Host is not set");
+
 		_client = CreateClient();
 	}
 
@@ -53,6 +57,13 @@ public class QdrantService
 		_logger.LogInformation("Recreating collection");
 		await _client.RecreateCollectionAsync(CollectionName, CreateVectorParams(), hnswConfig: CreateHnswConfig());
 		_logger.LogInformation("Recreation completed");
+	}
+
+	public async Task UpdatePayloadAsync(CardEdition cardEdition)
+	{
+		var payload = new CardPayload(cardEdition).ToMapFieldDictionary();
+
+		await _client.OverwritePayloadAsync(CollectionName, payload, cardEdition.GetPointId());
 	}
 
 	/// <summary>
@@ -94,24 +105,31 @@ public class QdrantService
 
 	private QdrantClient CreateClient()
 	{
-		_logger.LogDebug("Creating Qdrant client with {Host}:{Port}", Host, Port);
-		return new QdrantClient(Host, Port, https: false);
+		_logger.LogInformation("Creating Qdrant client with {Host}:{Port}", _host, _port);
+		return new QdrantClient(_host, _port, https: false);
 	}
 }
 
-public static class ScryfallCardObjectExtensions
+internal static class CardEditionExtensions
 {
-	public static PointStruct ToPointStruct(this CardEdition cardEdition, float[] vectors)
+	public static PointStruct ToPointStruct(this CardEdition cardEdition,
+		float[] vectors)
 	{
 		var payload = new CardPayload(cardEdition);
+		var id = cardEdition.GetPointId();
 		return new PointStruct()
 		{
-			Id = cardEdition.CardId,
+			Id = id,
 			Vectors = vectors,
 			Payload =
 			{
-				payload.ToMap()
+				payload.ToMapFieldDictionary()
 			}
 		};
+	}
+
+	public static Guid GetPointId(this CardEdition cardEdition)
+	{
+		return cardEdition.CardId;
 	}
 }

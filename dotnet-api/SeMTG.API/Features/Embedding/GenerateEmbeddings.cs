@@ -6,21 +6,29 @@ using SeMTG.API.Qdrant;
 
 namespace SeMTG.API.Features.Embedding;
 
-public class GenerateMissingEmbeddings
+public class GenerateEmbeddings
 {
-	public static void MapGenerateMissingEmbeddings(IEndpointRouteBuilder builder)
+	public static void MapGenerateEmbeddings(IEndpointRouteBuilder builder)
 	{
-		builder.MapPost("/generate-missing-embeddings", GenerateMissingEmbeddingsAsync);
+		builder.MapPost("/generate-embeddings", GenerateEmbeddingsAsync);
 	}
 
-	private static async Task GenerateMissingEmbeddingsAsync([FromServices] IEmbeddingService embeddingService,
+	private static async Task GenerateEmbeddingsAsync([FromServices] IEmbeddingService embeddingService,
 		[FromServices] ApplicationDbContext dbContext,
 		[FromServices] QdrantService qdrantService,
-		[FromServices] ILogger<GenerateMissingEmbeddings> logger,
+		[FromServices] ILogger<GenerateEmbeddings> logger,
 		CancellationToken cancellationToken,
-		int batchSize = 64)
+		int batchSize = 64,
+		bool onlyMissing = true)
 	{
-		var cards = await dbContext.Cards.Include(c => c.Editions).Where(card => card.Vector == null && card.Editions.Any()).AsNoTracking().ToListAsync();
+		var cardsQueryable = dbContext.Cards.Include(c => c.Editions)
+			.Where(card => card.Editions.Any());
+
+		if (onlyMissing)
+		{
+			cardsQueryable = cardsQueryable.Where(card => card.Vector == null);
+		}
+		var cards = await cardsQueryable.ToListAsync(cancellationToken: cancellationToken);
 		logger.LogInformation("Found {Count} cards with missing vectors", cards.Count);
 
 		var chunks = cards.Chunk(batchSize).ToList();

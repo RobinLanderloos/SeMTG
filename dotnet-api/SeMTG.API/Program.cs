@@ -29,33 +29,26 @@ builder.Services.AddScoped<CardEmbedder>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-	app.MapOpenApi();
+app.MapOpenApi();
 
-	app.UseSwaggerUI(options => { options.SwaggerEndpoint("/openapi/v1.json", "SeMTG API V1"); });
-}
-else
-{
-	app.UseHttpsRedirection();
-}
+app.UseSwaggerUI(options => { options.SwaggerEndpoint("/openapi/v1.json", "SeMTG API V1"); });
 
 using var scope = app.Services.CreateScope();
 var qdrantService = scope.ServiceProvider.GetRequiredService<QdrantService>();
 
 await qdrantService.InitializeAsync();
-
 // Admin
 var adminGroup = app
 	.MapGroup("/admin");
 adminGroup.MapRecreateCollection();
 adminGroup.MapUpdateDatabase();
+RegenerateVectorPayloads.MapRegenerateVectorPayloads(adminGroup);
 
 // Embedding
 var embeddingGroup = app
 	.MapGroup("/embedding");
 embeddingGroup.MapGenerateEmbedding();
-GenerateMissingEmbeddings.MapGenerateMissingEmbeddings(embeddingGroup);
+GenerateEmbeddings.MapGenerateEmbeddings(embeddingGroup);
 
 // Import
 var importGroup = app
@@ -65,7 +58,7 @@ importGroup.MapImport();
 // Search
 var searchGroup = app
 	.MapGroup("/search");
-searchGroup.MapSearch();
+Search.MapSearch(searchGroup);
 
 // Card
 var cardGroup = app

@@ -9,16 +9,21 @@ public class PythonHttpEmbeddingService : IEmbeddingService
     private readonly ILogger<PythonHttpEmbeddingService> _logger;
     private readonly IMemoryCache _cache;
     private readonly MemoryCacheEntryOptions _cacheOptions;
+    private readonly string _host;
+    private readonly int _port;
 
     // Cache key prefix to avoid collisions with other cached items
     private const string CacheKeyPrefix = "Embedding_";
 
     public PythonHttpEmbeddingService(
         ILogger<PythonHttpEmbeddingService> logger,
-        IMemoryCache memoryCache)
+        IMemoryCache memoryCache,
+        IConfiguration configuration)
     {
         _logger = logger;
         _cache = memoryCache;
+        _port = int.Parse(configuration["PythonEmbedder:Port"] ?? throw new InvalidOperationException("PythonEmbedder:Port is not set"));
+        _host = configuration["PythonEmbedder:Host"] ?? throw new InvalidOperationException("PythonEmbedder:Host is not set");
 
         // Default cache options - items expire after 24 hours
         _cacheOptions = new MemoryCacheEntryOptions()
@@ -152,7 +157,7 @@ public class PythonHttpEmbeddingService : IEmbeddingService
 
         var textsToEmbed = uncachedItems.Select(item => item.Text).ToList();
         var request = new { texts = textsToEmbed, batch_size = textsToEmbed.Count };
-        var response = await http.PostAsJsonAsync("http://localhost:5000/embed", request);
+        var response = await http.PostAsJsonAsync($"http://{_host}:{_port}/embed", request);
         response.EnsureSuccessStatusCode();
 
         var json = await response.Content.ReadFromJsonAsync<JsonElement>();

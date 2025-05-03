@@ -43,7 +43,7 @@ public class CardEdition
 
 	[JsonPropertyName("mana_cost")] public string ManaCost { get; set; }
 
-	[JsonPropertyName("cmc")] public double? Cmc { get; set; }
+	[JsonPropertyName("cmc")] public double Cmc { get; set; }
 
 	[JsonPropertyName("type_line")] public string TypeLine { get; set; }
 

@@ -22,6 +22,41 @@ services:
     volumes:
       - qdrant_data:/qdrant/storage
 
+  semtg-embedder:
+    image: robinlanderloos/semtg-embedder:latest
+    container_name: semtg-embedder
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+
+  semtg-api:
+    image: robinlanderloos/semtg-api:latest
+    container_name: semtg-api
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - Qdrant:Host=qdrant
+      - Qdrant:Port=6334
+      - PythonEmbedder:Host=semtg-embedder
+      - PythonEmbedder:Port=5000
+      - ConnectionStrings:Postgres=Host=postgres;Port=5432;Database=SeMTG;Username=postgres;Password=postgres
+    depends_on:
+      - postgres
+      - qdrant
+      - semtg-embedder
+
+  semtg-frontend:
+    image: robinlanderloos/semtg-frontend:latest
+    container_name: semtg-frontend
+    restart: unless-stopped
+    ports:
+      - "5080:80"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8080
+    depends_on:
+      - semtg-api
+
 volumes:
   postgres_data:
   qdrant_data:
